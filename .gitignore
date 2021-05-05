@@ -21,3 +21,12 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+.DS_Store
+.idea/
+
+pulsar-flink-watermarking-integration/.DS_Store
+pulsar-flink-watermarking-integration/pulsar-flink-watermarking-integration.iml
+pulsar-flink-watermarking-integration/src/.DS_Store
+pulsar-flink-watermarking-integration/src/main/.DS_Store
+pulsar-flink-watermarking-integration/target/
