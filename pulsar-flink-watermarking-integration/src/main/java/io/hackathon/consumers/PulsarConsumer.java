@@ -11,7 +11,6 @@ public class PulsarConsumer {
         PulsarClient pulsarClient = PulsarClient.builder()
                 .serviceUrl(AppConfig.SERVICE_URL)
                 .build();
-
         Consumer<StationSensorReading> consumer = ClientUtils.initSimpleConsumer(
                 pulsarClient,
                 AppConfig.topicNameSingle,
