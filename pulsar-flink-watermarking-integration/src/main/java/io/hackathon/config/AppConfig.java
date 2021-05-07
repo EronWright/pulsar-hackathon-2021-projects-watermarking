@@ -9,4 +9,8 @@ public class AppConfig {
 
     public static final String partitionnedTopicName = "watermarks-test-partitioned";
     public static final int numberOfPartitions = 3;
+
+    public static final String TRANSACTIONS_TENANT = "pulsar";
+    public static final String TRANSACTIONS_NAMESPACE = "system";
+
 }

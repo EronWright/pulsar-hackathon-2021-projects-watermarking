@@ -4,6 +4,7 @@ import io.hackathon.config.AppConfig;
 import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.client.api.PulsarClientException;
+import org.apache.pulsar.common.policies.data.TenantInfo;
 
 public class AdminUtils {
 
@@ -12,6 +13,28 @@ public class AdminUtils {
                 .builder()
                 .serviceHttpUrl(AppConfig.ADMIN_URL)
                 .build();
+    }
+
+    public static void createTenant(final PulsarAdmin pulsarAdmin, String tenantName, TenantInfo tenantInfo) {
+        try {
+            pulsarAdmin.tenants().createTenant(tenantName, tenantInfo);
+            System.out.printf("Created tenant '%s'%n", tenantName);
+        } catch (PulsarAdminException.ConflictException conflictException) {
+            System.out.printf("Tenant '%s' already exists%n", tenantName);
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void createNamespace(final PulsarAdmin pulsarAdmin, final String namespace) {
+        try {
+            pulsarAdmin.namespaces().createNamespace(namespace);
+            System.out.printf("Created namespace '%s'%n", namespace);
+        } catch (PulsarAdminException.ConflictException conflictException) {
+            System.out.printf("Namespace '%s' already exists%n", namespace);
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void createPartitionedTopics(final PulsarAdmin pulsarAdmin,
