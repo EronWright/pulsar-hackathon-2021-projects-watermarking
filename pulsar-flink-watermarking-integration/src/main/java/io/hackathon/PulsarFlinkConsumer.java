@@ -15,11 +15,11 @@ public class PulsarFlinkConsumer {
 
     public static void main(String[] args) {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(2);
+        env.setParallelism(4);
         env.setRestartStrategy(RestartStrategies.noRestart());
 
         Properties props = new Properties();
-        props.setProperty("topic", AppConfig.partitionnedTopicName);
+        props.setProperty("topic", AppConfig.topicNameSingle);
         props.setProperty("scan.startup.mode", "earliest");
         props.setProperty("partition.discovery.interval-millis", "5000");
 

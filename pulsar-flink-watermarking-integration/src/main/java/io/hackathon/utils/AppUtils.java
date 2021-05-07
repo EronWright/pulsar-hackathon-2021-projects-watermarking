@@ -1,5 +1,6 @@
 package io.hackathon.utils;
 
+import io.hackathon.config.AppConfig;
 import io.hackathon.models.StationSensorReading;
 
 import java.io.IOException;
@@ -10,18 +11,78 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class UtilsHelper {
-    public static Stream<String> readData(String inputPath) throws IOException {
+public class AppUtils {
+
+    public static List<StationSensorReading> loadStationSensorReadingsData() throws IOException {
+        List<StationSensorReading> stationSensorReadingStream = AppUtils
+                .readData(AppConfig.inputFilePath)
+                .skip(1)
+                .map(AppUtils::strToStationSensorReading)
+                .filter(AppUtils::hasReadings)
+                .collect(Collectors.toList());
+
+        outOfOrderEventsCount(stationSensorReadingStream);
+        return stationSensorReadingStream;
+    }
+
+    public static HashMap<String, List<StationSensorReading>> groupReadingsByStation(List<StationSensorReading> stationSensorReadingStream) {
+        stationSensorReadingStream.stream().map(StationSensorReading::getStationName)
+                .distinct()
+                .forEach(System.out::println);
+
+
+        List<StationSensorReading> station1 = stationSensorReadingStream
+                .stream()
+                .filter(sst -> sst.getStationName().equals("Oak Street Weather Station"))
+                .collect(Collectors.toList());
+
+        List<StationSensorReading> station2 = stationSensorReadingStream
+                .stream()
+                .filter(sst -> sst.getStationName().equals("Foster Weather Station"))
+                .collect(Collectors.toList());
+
+        List<StationSensorReading> station3 = stationSensorReadingStream
+                .stream()
+                .filter(sst -> sst.getStationName().equals("63rd Street Weather Station"))
+                .collect(Collectors.toList());
+
+        HashMap<String, List<StationSensorReading>> stationData = new HashMap<String, List<StationSensorReading>>() {{
+            put("station1", station1);
+            put("station2", station2);
+            put("station3", station3);
+        }};
+        stationData.forEach((k, v) -> {
+            System.out.println("Computing OOE for " + k);
+            outOfOrderEventsCount(v);
+        });
+
+        return stationData;
+    }
+
+    private static void outOfOrderEventsCount(List<StationSensorReading> stationSensorReadingStream) {
+        int totalOutofOrderEvents = 0;
+        for (int i = 1; i < stationSensorReadingStream.size(); i ++) {
+            if (stationSensorReadingStream.get(i - 1).getMeasurementTimestamp().after(stationSensorReadingStream.get(i).getMeasurementTimestamp())) {
+                totalOutofOrderEvents += 1;
+            }
+        }
+
+        System.out.println("Total Events: " + stationSensorReadingStream.size());
+        System.out.println("Total Out of order events: " + totalOutofOrderEvents);
+    }
+
+    private static Stream<String> readData(String inputPath) throws IOException {
         Path path = Paths.get(inputPath);
         return Files.lines(path);
     }
 
-    public static StationSensorReading strToStationSensorReading(String line) {
+    private static StationSensorReading strToStationSensorReading(String line) {
         String[] tokens = line.split(",");
 
         if (tokens[1].equals("") || tokens[16].equals("")) {
@@ -67,11 +128,12 @@ public class UtilsHelper {
                 measurementID);
     }
 
-    public static boolean hasReadings(StationSensorReading stationSensorReading) {
+    private static boolean hasReadings(StationSensorReading stationSensorReading) {
         if (stationSensorReading.getMeasurementTimestamp() != null) {
             return true;
         } return false;
     }
+
     private static Double strToDoubleParser(String str) {
         try {
             return Double.parseDouble(str);

@@ -1,33 +1,22 @@
 package io.hackathon;
 
 import io.hackathon.config.AppConfig;
-import io.hackathon.interceptors.CustomProducerInterceptor;
-import io.hackathon.models.StationSensorReading;
-import io.hackathon.utils.UtilsHelper;
-import org.apache.pulsar.client.api.MessageId;
-import org.apache.pulsar.client.api.Producer;
-import org.apache.pulsar.client.api.PulsarClient;
-import org.apache.pulsar.client.impl.schema.JSONSchema;
+import org.apache.pulsar.client.api.*;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 public class SensorReadingProducer {
 
     public static void main(String[] args) throws IOException {
-        List<StationSensorReading> stationSensorReadingStream = UtilsHelper
-                .readData(AppConfig.inputFilePath)
-                .skip(1)
-                .map(UtilsHelper::strToStationSensorReading)
-                .filter(UtilsHelper::hasReadings)
-                .collect(Collectors.toList());
-        stationSensorReadingStream.forEach(System.out::println);
-        System.out.println(stationSensorReadingStream.size());
+//        List<StationSensorReading> stationSensorReadingStream = UtilsHelper
+//                .readData(AppConfig.inputFilePath)
+//                .skip(1)
+//                .map(UtilsHelper::strToStationSensorReading)
+//                .filter(UtilsHelper::hasReadings)
+//                .collect(Collectors.toList());
+//        stationSensorReadingStream.forEach(System.out::println);
+//        System.out.println(stationSensorReadingStream.size());
 
         // create a pulsar client
         PulsarClient pulsarClient = PulsarClient.builder()
@@ -35,37 +24,71 @@ public class SensorReadingProducer {
                 .build();
 
 
-        CustomProducerInterceptor interceptor = new CustomProducerInterceptor();
-        Producer<StationSensorReading> producer = pulsarClient
-                .newProducer(JSONSchema.of(StationSensorReading.class))
-                .topic(AppConfig.partitionnedTopicName)
-                .blockIfQueueFull(true)
-                .maxPendingMessages(10000)
-                .intercept(interceptor)
-                .create();
+//        CustomProducerInterceptor interceptor = new CustomProducerInterceptor();
+//        Producer<StationSensorReading> producer = pulsarClient
+//                .newProducer(JSONSchema.of(StationSensorReading.class))
+//                .topic(AppConfig.partitionnedTopicName)
+//                .enableBatching(true)
+////                .blockIfQueueFull(true)
+////                .maxPendingMessages(10000)
+////                .intercept(interceptor)
+//                .create();
 
         // load messages and produce them to pulsar
         long t1 = System.currentTimeMillis();
-        Stream<CompletableFuture<MessageId>> cfStream = stationSensorReadingStream
-                .stream()
-                .map(stationSensorReading -> {
-                    CompletableFuture<MessageId> messageIdCompletableFuture = producer
-                            .newMessage()
-                            .key(stationSensorReading.getStationName())
-                            .value(stationSensorReading)
-                            .eventTime(stationSensorReading.getMeasurementTimestamp().getTime())
-                            .sendAsync();
-                    producer.flushAsync();
-                    return messageIdCompletableFuture;
-                });
 
-        cfStream.collect(Collectors.toList()).forEach(CompletableFuture::join);
-        long t2 = System.currentTimeMillis();
-        long totalTimeSeconds = TimeUnit.MILLISECONDS.toSeconds(t2 - t1);
+//        Stream<CompletableFuture<MessageId>> cfStream = stationSensorReadingStream
+//                .stream()
+//                .map(stationSensorReading -> {
+//
+//                    CompletableFuture<MessageId> messageIdCompletableFuture = producer
+//                            .newMessage()
+//                            .key(stationSensorReading.getStationName())
+//                            .value(stationSensorReading)
+//                            .eventTime(stationSensorReading.getMeasurementTimestamp().getTime())
+//                            .sendAsync();
+////                    producer.flushAsync();
+//                    return messageIdCompletableFuture;
+//                });
 
-        System.out.printf("Total messages produced: %s in %s seconds.%n", interceptor.totalMessageCount(), totalTimeSeconds);
-        // close resources
-        producer.close();
-        pulsarClient.close();
+//        producer.newWatermark().eventTime().send();
+//        producer.flush();
+//        cfStream.collect(Collectors.toList()).forEach(CompletableFuture::join);
+
+//        Timestamp currentWatermark = stationSensorReadingStream.get(0).getMeasurementTimestamp();
+//
+//        for (StationSensorReading ssr : stationSensorReadingStream) {
+//            if (ssr.getMeasurementTimestamp().after(currentWatermark)) {
+//                currentWatermark = ssr.getMeasurementTimestamp();
+//            }
+//
+//            System.out.println("Sending: " + ssr);
+//            producer
+//                    .newMessage()
+//                    .key(ssr.getStationName())
+//                    .value(ssr)
+//                    .eventTime(ssr.getMeasurementTimestamp().getTime())
+//                    .send();
+//        }
+//
+//
+//        long t2 = System.currentTimeMillis();
+//        long totalTimeSeconds = TimeUnit.MILLISECONDS.toSeconds(t2 - t1);
+//
+//        System.out.printf("Total messages produced: %s in %s seconds.%n", 0, totalTimeSeconds);
+//
+//        System.out.println("Done sending messages -> sending watermark with timestamp: " + currentWatermark);
+//
+//        producer.newWatermark()
+//                .eventTime(currentWatermark.getTime())
+//                .send();
+//
+//        WatermarkId watermarkId = producer.newWatermark()
+//                .eventTime(currentWatermark.getTime())
+//                .send();
+//        System.out.println("Published watermark: " + watermarkId);
+//
+//        producer.close();
+//        pulsarClient.close();
     }
 }
