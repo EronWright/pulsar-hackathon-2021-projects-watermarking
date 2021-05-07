@@ -4,6 +4,7 @@ import io.hackathon.config.AppConfig;
 import io.hackathon.interceptors.CustomMsgListener;
 import io.hackathon.models.StationSensorReading;
 import org.apache.pulsar.client.api.*;
+import org.apache.pulsar.client.api.transaction.Transaction;
 import org.apache.pulsar.client.impl.schema.JSONSchema;
 
 import java.sql.Timestamp;
@@ -18,6 +19,13 @@ public class ClientUtils {
                 .build();
     }
 
+    public static PulsarClient initPulsarClientWithTransactions() throws PulsarClientException {
+        return PulsarClient.builder()
+                .serviceUrl(AppConfig.SERVICE_URL)
+                .enableTransaction(true)
+                .build();
+    }
+
     public static Producer<StationSensorReading> initSimpleProducer(final PulsarClient pulsarClient,
                                                                     String topicName,
                                                                     String producerName) throws PulsarClientException {
@@ -26,6 +34,17 @@ public class ClientUtils {
                 .producerName(producerName)
                 .create();
     }
+
+    public static Producer<StationSensorReading> initTransactionalProducer(final PulsarClient pulsarClient,
+                                                                           String topicName,
+                                                                           String producerName) throws PulsarClientException {
+        return pulsarClient.newProducer(JSONSchema.of(StationSensorReading.class))
+                .topic(topicName)
+                .producerName(producerName)
+                .sendTimeout(0, TimeUnit.SECONDS)
+                .create();
+    }
+
 
     public static Producer<StationSensorReading> initPartitionedProducer(final PulsarClient pulsarClient,
                                                                     String topicName,
@@ -63,6 +82,41 @@ public class ClientUtils {
             }
 
             MessageId messageId = producer.newMessage(JSONSchema.of(StationSensorReading.class))
+                    .key(ssr.getStationName())
+                    .value(ssr)
+                    .send();
+
+            System.out.printf("Sent message with id: '%s' and payload: %s%n", messageId.toString(), ssr);
+            totalMessages += 1;
+        }
+        long t2 = System.currentTimeMillis();
+        long totalTimeSeconds = TimeUnit.MILLISECONDS.toSeconds(t2 - t1);
+        producer.flush();
+        System.out.printf("Total messages produced: %s in %s seconds.%n", totalMessages, totalTimeSeconds);
+
+        System.out.println("Sending watermark: " + currentWatermark);
+        WatermarkId watermarkId = producer.newWatermark()
+                .eventTime(currentWatermark.getTime())
+                .send();
+
+        System.out.printf("Producer %s sent watermark %s successfully.%n", producer.getProducerName(), watermarkId.toString());
+
+        producer.flush();
+    }
+
+    public static void doProducerWorkWithTransaction(final Producer<StationSensorReading> producer,
+                                                     final List<StationSensorReading> stationSensorReadings,
+                                                     final Transaction transaction) throws PulsarClientException {
+        int totalMessages = 0;
+        long t1 = System.currentTimeMillis();
+        Timestamp currentWatermark = stationSensorReadings.get(0).getMeasurementTimestamp();
+
+        for (StationSensorReading ssr : stationSensorReadings) {
+            if (ssr.getMeasurementTimestamp().after(currentWatermark)) {
+                currentWatermark = ssr.getMeasurementTimestamp();
+            }
+
+            MessageId messageId = producer.newMessage(transaction)
                     .key(ssr.getStationName())
                     .value(ssr)
                     .send();
