@@ -7,7 +7,6 @@ import java.sql.Timestamp;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.json.JSONObject;
 
 public class CustomMsgListener implements MessageListener<StationSensorReading> {
     private final AtomicInteger messageCounter = new AtomicInteger();
@@ -23,8 +22,8 @@ public class CustomMsgListener implements MessageListener<StationSensorReading> 
     public void received(Consumer<StationSensorReading> consumer, Message<StationSensorReading> message) {
         System.out.printf("Message received: %s%n", new String(message.getData()));
         try {
+            buffer.add(message.getValue());
             consumer.acknowledge(message);
-            buffer.add((StationSensorReading)message);
 
         } catch (PulsarClientException e) {
             consumer.negativeAcknowledge(message);
@@ -42,9 +41,10 @@ public class CustomMsgListener implements MessageListener<StationSensorReading> 
         System.out.println("Consumer " + consumer.getConsumerName() + "received watermark " + watermark.toString());
         //Flush buffer based on watermark
         buffer.stream()
-                        .filter(element -> element.getMeasurementTimestamp().before(new Timestamp(watermark.getEventTime())))
+                        .filter(element -> !element.getMeasurementTimestamp().after(new Timestamp(watermark.getEventTime())))
                         .forEach(e -> {
                             System.out.println(e);
+                            buffer.remove();
                         });
 
     }
