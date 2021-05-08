@@ -21,6 +21,7 @@ public class PulsarConsumer {
                 pulsarClient,
                 options.topicName,
                 options.subscriptionName,
+                options.consumerName,
                 !options.faultNoack
         );
 

@@ -26,4 +26,11 @@ public class PulsarConsumerOptions extends OptionsBase {
             defaultValue = "watermarking-subs-test"
     )
     public String subscriptionName;
+
+    @Option(
+            name = "consumer",
+            help = "Consumer name.",
+            defaultValue = "watermarking-consumer"
+    )
+    public String consumerName;
 }

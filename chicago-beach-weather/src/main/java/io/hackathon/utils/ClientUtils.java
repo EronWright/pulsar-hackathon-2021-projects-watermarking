@@ -84,6 +84,7 @@ public class ClientUtils {
             MessageId messageId = producer.newMessage(JSONSchema.of(StationSensorReading.class))
                     .key(ssr.getStationName())
                     .value(ssr)
+                    .eventTime(ssr.getMeasurementTimestamp().getTime())
                     .send();
 
             System.out.printf("Sent message with id: '%s' and payload: %s%n", messageId.toString(), ssr);
@@ -140,14 +141,16 @@ public class ClientUtils {
     }
 
     public static Consumer<StationSensorReading> initSimpleConsumer(final PulsarClient pulsarClient,
-                                                      String topicName,
-                                                      String subscriptionName, boolean ackMessage) throws PulsarClientException {
+            String topicName,
+            String subscriptionName,
+            String consumerName,
+            boolean ackMessage) throws PulsarClientException {
         return pulsarClient.newConsumer(JSONSchema.of(StationSensorReading.class))
                 .topic(topicName)
                 .subscriptionName(subscriptionName)
                 .subscriptionMode(SubscriptionMode.NonDurable)
                 .subscriptionType(SubscriptionType.Exclusive)
-                .consumerName("watermarking-consumer")
+                .consumerName(consumerName)
                 .messageListener(new CustomMsgListener(ackMessage))
                 .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
                 .enableWatermarking(true)
