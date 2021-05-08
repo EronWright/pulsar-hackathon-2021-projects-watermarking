@@ -1,5 +1,0 @@
-/Users/murthy/Work/OSS/pulsar/repos/pulsar-hackathon-2021-projects-watermarking/sensor-data-producer/src/main/java/io/hackathon/models/StationSensorReading.java
-/Users/murthy/Work/OSS/pulsar/repos/pulsar-hackathon-2021-projects-watermarking/sensor-data-producer/src/main/java/io/hackathon/config/AppConfig.java
-/Users/murthy/Work/OSS/pulsar/repos/pulsar-hackathon-2021-projects-watermarking/sensor-data-producer/src/main/java/io/hackathon/interceptors/CustomProducerInterceptor.java
-/Users/murthy/Work/OSS/pulsar/repos/pulsar-hackathon-2021-projects-watermarking/sensor-data-producer/src/main/java/io/hackathon/utils/UtilsHelper.java
-/Users/murthy/Work/OSS/pulsar/repos/pulsar-hackathon-2021-projects-watermarking/sensor-data-producer/src/main/java/io/hackathon/SensorReadingProducer.java

@@ -1,5 +1,0 @@
-io/hackathon/models/StationSensorReading.class
-io/hackathon/interceptors/CustomProducerInterceptor.class
-io/hackathon/SensorReadingProducer.class
-io/hackathon/config/AppConfig.class
-io/hackathon/utils/UtilsHelper.class
