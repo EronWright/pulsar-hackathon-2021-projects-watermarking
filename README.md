@@ -1,4 +1,6 @@
-## What is Watermark
+_Note: see [EronWright/pulsar](https://github.com/apache/pulsar/compare/branch-2.7...EronWright:watermarking?expand=1) repository (`watermarking` branch) for the corresponding Pulsar code._
+
+## What is Watermarking
 
 Watermarks act as a metric of progress when observing an infinite and unbounded data sourced. A watermark is a notion of input completeness with respect to event times. A watermark(t) declares that event time has reached time t in that stream, meaning that there should be no more elements from the stream with a timestamp t’ <= t (i.e. events with timestamps older or equal to the watermark).
 
@@ -6,7 +8,7 @@ Watermarks are crucial for out-of-order streams, where the events are not strict
 
 For more details about watermark concepts, see O’Reilly’s [Beyond Batch 101](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/) and [Beyond Batch 102](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-102/) article series. 
 
-## Why We Develop Watermark for Pulsar
+## Why We Develop Watermarking for Pulsar
 
 Pulsar has a limited concept of event time: the `eventTime` field of a message. This field (or a timestamp extracted from the message body) is sometimes used by the consumer to generate watermarks, for example, using the bounded out-of-orderness heuristic. However, this approach is highly sensitive to Pulsar’s system internals, especially in historical processing and when working with partitioned topics. So there are some problems of generating watermarks when consuming a Pulsar topic by Flink application, Pulsar Functions, and other and other modern stream processing engines (SPE):
 
