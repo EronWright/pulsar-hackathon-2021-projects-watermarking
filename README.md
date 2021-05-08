@@ -4,6 +4,9 @@ _Note: see [EronWright/pulsar](https://github.com/apache/pulsar/compare/branch-2
 
 Watermarks act as a metric of progress when observing an infinite and unbounded data sourced. A watermark is a notion of input completeness with respect to event times. A watermark(t) declares that event time has reached time t in that stream, meaning that there should be no more elements from the stream with a timestamp t’ <= t (i.e. events with timestamps older or equal to the watermark).
 
+![In-Order Streams](https://ci.apache.org/projects/flink/flink-docs-release-1.13/fig/stream_watermark_in_order.svg)
+![Out-of-Order Streams](https://ci.apache.org/projects/flink/flink-docs-release-1.13/fig/stream_watermark_out_of_order.svg)
+
 Watermarks are crucial for out-of-order streams, where the events are not strictly ordered by their timestamps.
 
 For more details about watermark concepts, see O’Reilly’s [Beyond Batch 101](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/) and [Beyond Batch 102](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-102/) article series. 
@@ -46,6 +49,131 @@ In our experiment, we support the following consumers:
 
 - Java Client Consumer
 - Apache Flink
+
+## How it Works
+Watermarking is a process of gathering watermark messages from producers, brokering watermarks based on subscriptions, and sending watermarks to consumers.
+
+### Producer API
+The producer emits watermarks via a new method on the `Producer` interface:
+
+```
+package org.apache.pulsar.client.api;
+
+public interface Producer<T> extends Closeable {
+    /**
+     * Create a new watermark builder.
+     *
+     * @return a watermark builder that can be used to construct the watermark to be sent through this producer.
+     */
+    WatermarkBuilder newWatermark();
+}
+```
+
+Watermarks may also be send transactionally:
+```
+public interface Producer<T> extends Closeable {
+    /**
+     * Create a new watermark builder with transaction.
+     */
+    WatermarkBuilder newWatermark(Transaction txn);
+}
+```
+
+The builder allows for an event time to be set on the watermark.
+```
+public interface WatermarkBuilder extends Serializable {
+    /**
+     * Set the event time for a given watermark.
+     *
+     * @return the watermark builder instance
+     */
+    WatermarkBuilder eventTime(long timestamp);
+    
+    CompletableFuture<WatermarkId> sendAsync();
+    
+    WatermarkId send() throws PulsarClientException;
+}
+```
+
+Watermarks are broadcast to all partitions, in-band with other messages that are routed normally.  The producer is thus making an assertion that minimum event time for any subsequent message is at least the specified time (see `setEventTime` field of `TypedMessageBuilder<T>`).
+
+## Broker
+For each subscription, the broker uses a managed cursor to materialize the minimum watermark across all producers. The watermark tracks the acknowledeged mesasges, so that the watermark doesn't advance prematurely for any one consumer.  This allows the system to work well with all subsciptrion types.  In other words, the cursor tracks the _mark-delete point_ of the subscription's main cursor.
+
+Within the broker, the cursor is encapsulated in a `WatermarkGenerator` that accepts tracking updates from the subscription.
+```
+package org.apache.pulsar.broker.service.eventtime;
+
+public interface WatermarkGenerator {
+    /**
+     * Get the current watermark.
+     * @return
+     */
+    Long getWatermark();
+
+    /**
+     * Advance the tracking position of the watermark generator.
+     */
+    CompletableFuture<Void> seek(Position position);
+}
+
+```
+The watermark generator supports transactions.  If an uncommitted watermark is encountered, the generator hold its in state until the transactio is committed.
+
+The generator vends the watermarks to consumers upon changese to thge tracking position.  The dispatcher also handles sending the latest watermark to new consumers.  Again this watermark represents acknowleged messages only, to ensure that the watermark monotoonically increases for all consumers.
+
+## Consumer
+The consumer opts into watermarking using a new method on the `ConsumerBuilder`.  There are minor semantic changes to the `read` methods which warrant this.
+```
+public interface ConsumerBuilder<T> extends Cloneable {
+    /**
+     * Enable or disable receiving watermarks.
+     * @param watermarkingEnabled true if watermarks should be delivered.
+     * @return
+     */
+    ConsumerBuilder<T> enableWatermarking(boolean watermarkingEnabled);
+}
+```
+
+The consumer receives watermarks using a new method on the `MessageListener` interface.  
+
+```
+package org.apache.pulsar.client.api;
+
+public interface MessageListener<T> extends Serializable {
+    /**
+     * This method is called whenever a new watermark is received.
+     *
+     * <p>Watermarks are guaranteed to be delivered in order (with respect to messages) and from the same thread
+     * for a single consumer.
+     *
+     * <p>This method will only be called once for each watermark, unless either application or broker crashes.
+     *
+     * <p>Application is responsible of handling any exception that could be thrown while processing the watermark.
+     *
+     * @param consumer
+     *            the consumer that received the message
+     * @param watermark
+     *            the watermark object
+     */
+    default void receivedWatermark(Consumer<T> consumer, Watermark watermark) {
+        // no-op
+    }
+}
+
+```
+The consumer may also obtain the latest watermark via the `Consumer` interface.  This should be called after `read` or `readAsync` completes.  To accelerate the receipt of watermarks, any outstanding async read is automatically completed with a `null` mesasage.  Open question as to whether an exception would be better.  Suggest apps use `read` with a timeout if the synhronous approach is preferred.
+
+```
+public interface Consumer<T> extends Closeable {
+    /**
+     * @return The latest watermark, or null if watermarking is not enabled or a watermark has not been received.
+     */
+    Watermark getLastWatermark();
+}
+```
+
+The consumer receives watermarks on the same thread as ordinary messages.  The consumer may expect that any subsequent message will have an event timestamp of at least the watermark value.  If the expectation is violated, it is due to a false assertion made by a producer.  The application should treat such messages as true late mssages.
 
 ## Conclusion
 
