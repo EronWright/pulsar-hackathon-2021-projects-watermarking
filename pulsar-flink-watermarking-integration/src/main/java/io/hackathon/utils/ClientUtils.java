@@ -141,7 +141,7 @@ public class ClientUtils {
 
     public static Consumer<StationSensorReading> initSimpleConsumer(final PulsarClient pulsarClient,
                                                       String topicName,
-                                                      String subscriptionName) throws PulsarClientException {
+                                                      String subscriptionName, boolean ackMessage) throws PulsarClientException {
 //        HashMap<String, Object> conf = new HashMap<String, Object>() {{
 //            put("watermarkingEnabled", true);
 //        }};
@@ -151,7 +151,7 @@ public class ClientUtils {
                 .subscriptionName(subscriptionName)
                 .subscriptionType(SubscriptionType.Exclusive)
                 .consumerName("watermarking-consumer")
-                .messageListener(new CustomMsgListener())
+                .messageListener(new CustomMsgListener(ackMessage))
                 .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
                 .subscribe();
     }

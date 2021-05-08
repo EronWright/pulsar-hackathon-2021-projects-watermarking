@@ -12,10 +12,12 @@ public class CustomMsgListener implements MessageListener<StationSensorReading> 
     private final AtomicInteger messageCounter = new AtomicInteger();
     Comparator<StationSensorReading> datetimeSorter;
     PriorityQueue<StationSensorReading> buffer;
+    private boolean ackMessage;
 
-    public CustomMsgListener(){
+    public CustomMsgListener(boolean ackMessage){
         datetimeSorter = Comparator.comparing(StationSensorReading::getMeasurementTimestamp);
         buffer = new PriorityQueue<StationSensorReading>(datetimeSorter);
+        this.ackMessage = ackMessage;
     }
 
     @Override
@@ -23,7 +25,8 @@ public class CustomMsgListener implements MessageListener<StationSensorReading> 
         System.out.printf("Message received: %s%n", new String(message.getData()));
         try {
             buffer.add(message.getValue());
-            consumer.acknowledge(message);
+            if(this.ackMessage)
+                consumer.acknowledge(message);
 
         } catch (PulsarClientException e) {
             consumer.negativeAcknowledge(message);
