@@ -8,14 +8,18 @@ import org.apache.pulsar.client.api.*;
 public class PulsarConsumer {
 
     public static void main(String[] args) throws PulsarClientException {
+        boolean ackMessage = true;
+        if(args.length>1 && args[0] != null)
+            ackMessage = Boolean.getBoolean(args[0]);
+
         PulsarClient pulsarClient = PulsarClient.builder()
                 .serviceUrl(AppConfig.SERVICE_URL)
                 .build();
-
         Consumer<StationSensorReading> consumer = ClientUtils.initSimpleConsumer(
                 pulsarClient,
                 AppConfig.topicNameSingle,
-                "watermarking-subs-test"
+                "watermarking-subs-test",
+                ackMessage
         );
 
         // add a shutdown hook to clear the resources

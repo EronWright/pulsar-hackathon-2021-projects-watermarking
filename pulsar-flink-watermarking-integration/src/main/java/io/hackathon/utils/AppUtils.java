@@ -21,7 +21,7 @@ public class AppUtils {
 
     public static List<StationSensorReading> loadStationSensorReadingsData() throws IOException {
         List<StationSensorReading> stationSensorReadingStream = AppUtils
-                .readData(AppConfig.inputFilePath)
+                .readData(System.getProperty("user.dir")+AppConfig.inputFilePath)
                 .skip(1)
                 .map(AppUtils::strToStationSensorReading)
                 .filter(AppUtils::hasReadings)

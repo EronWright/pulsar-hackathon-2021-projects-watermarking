@@ -25,6 +25,7 @@ public class TransactionalProducer {
 
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException, PulsarAdminException {
         PulsarAdmin pulsarAdmin = AdminUtils.initAdminClient();
+        System.out.println(System.getProperty("user.dir"));
         List<StationSensorReading> stationSensorReadings = AppUtils.loadStationSensorReadingsData();
 
         // create tenant/namespace needed for the transactions

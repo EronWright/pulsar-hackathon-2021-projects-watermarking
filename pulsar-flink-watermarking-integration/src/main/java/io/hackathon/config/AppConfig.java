@@ -1,7 +1,8 @@
 package io.hackathon.config;
 
 public class AppConfig {
-    public static final String inputFilePath = "pulsar-flink-watermarking-integration/src/main/resources/beach-weather-stations-automated-sensors-1.csv";
+
+    public static final String inputFilePath = "/src/main/resources/beach-weather-stations-automated-sensors-2.csv";
     public static final String ADMIN_URL = "http://localhost:8080";
     public static final String SERVICE_URL ="pulsar://localhost:6650";
 
