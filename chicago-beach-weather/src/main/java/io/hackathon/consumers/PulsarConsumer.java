@@ -1,5 +1,6 @@
 package io.hackathon.consumers;
 
+import com.google.devtools.common.options.*;
 import io.hackathon.config.AppConfig;
 import io.hackathon.models.StationSensorReading;
 import io.hackathon.utils.ClientUtils;
@@ -8,18 +9,19 @@ import org.apache.pulsar.client.api.*;
 public class PulsarConsumer {
 
     public static void main(String[] args) throws PulsarClientException {
-        boolean ackMessage = true;
-        if(args.length>1 && args[0] != null)
-            ackMessage = Boolean.getBoolean(args[0]);
+        OptionsParser parser = OptionsParser.newOptionsParser(PulsarConsumerOptions.class);
+        parser.parseAndExitUponError(args);
+        PulsarConsumerOptions options = parser.getOptions(PulsarConsumerOptions.class);
+        assert options != null;
 
         PulsarClient pulsarClient = PulsarClient.builder()
                 .serviceUrl(AppConfig.SERVICE_URL)
                 .build();
         Consumer<StationSensorReading> consumer = ClientUtils.initSimpleConsumer(
                 pulsarClient,
-                AppConfig.topicNameSingle,
-                "watermarking-subs-test",
-                ackMessage
+                options.topicName,
+                options.subscriptionName,
+                !options.faultNoack
         );
 
         // add a shutdown hook to clear the resources

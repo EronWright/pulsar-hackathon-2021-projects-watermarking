@@ -142,17 +142,15 @@ public class ClientUtils {
     public static Consumer<StationSensorReading> initSimpleConsumer(final PulsarClient pulsarClient,
                                                       String topicName,
                                                       String subscriptionName, boolean ackMessage) throws PulsarClientException {
-//        HashMap<String, Object> conf = new HashMap<String, Object>() {{
-//            put("watermarkingEnabled", true);
-//        }};
-
         return pulsarClient.newConsumer(JSONSchema.of(StationSensorReading.class))
                 .topic(topicName)
                 .subscriptionName(subscriptionName)
+                .subscriptionMode(SubscriptionMode.NonDurable)
                 .subscriptionType(SubscriptionType.Exclusive)
                 .consumerName("watermarking-consumer")
                 .messageListener(new CustomMsgListener(ackMessage))
                 .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
+                .enableWatermarking(true)
                 .subscribe();
     }
 }
