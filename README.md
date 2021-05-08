@@ -6,7 +6,7 @@ Watermarks are crucial for out-of-order streams, where the events are not strict
 
 For more details about watermark concepts, see O’Reilly’s excellent [Beyond Batch 101](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/) and [Beyond Batch 102](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-102/) article series. 
 
-## Why we develop watermark for Pulsar
+## Why We Develop Watermark for Pulsar
 
 Pulsar has a limited concept of event time today: the `eventTime` field of a message. This field (or a timestamp extracted from the message body) is sometimes used by the consumer to generate watermarks, e.g. using the bounded out-of-orderness heuristic. However, this approach is highly sensitive to Pulsar’s system internals, especially in historical processing and when working with partitioned topics. So there are some concrete problems of generating watermarks when consuming a Pulsar topic by Flink application, Pulsar Functions, and other and other modern stream processing engines (SPE):
 
@@ -19,7 +19,7 @@ Our goal is to support watermark in Apache Pulsar, encapsulate system internals 
 
 For more details, see [our proposal](https://docs.google.com/document/d/1fWOM1zYpBrbVRI02r5w91Wtb3Ou65905abv-1242Vb8/edit#heading=h.a2h18vcro4v8).
 
-## How to play with watermark
+## How to Experiment
 
 You can experiment the watermarking progress with the sample code contained in the [watermarking repository](https://github.com/EronWright/pulsar-hackathon-2021-projects-watermarking). In our experiment, we adopt a sensor dataset that provides many out-of-order events. For details, refer to [our dataset](https://data.world/cityofchicago/beach-weather-stations-automated-sensors).
 
@@ -47,7 +47,7 @@ In our experiment, we support the following consumers:
 
 ## Conclusion
 
-It is beneficail to introduce watermarks in Apache Pulsar: 
+It is worthy to introduce watermarks in Apache Pulsar, the main benefits include: 
 
 - Shift burden of watermark correctness to the problem domain.
 - Ensure time-ordered stream of events for the end consumers for an infinite stream of events, even if events arrive out-of-order in Pulsar.
@@ -56,7 +56,7 @@ If you're interested in the watermarking project, feel free to share your ideas 
 
 ## Reference
 
-The following are some references we used in this project:
+The following are some references we've used in this project:
 
 - [Watermark proposal](https://docs.google.com/document/d/1fWOM1zYpBrbVRI02r5w91Wtb3Ou65905abv-1242Vb8/edit#heading=h.a2h18vcro4v8)
 - [Data set](https://data.world/cityofchicago/beach-weather-stations-automated-sensors)
