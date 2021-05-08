@@ -4,13 +4,13 @@ Watermarks act as a metric of progress when observing an infinite and unbounded 
 
 Watermarks are crucial for out-of-order streams, where the events are not strictly ordered by their timestamps.
 
-For more details about watermark concepts, see O’Reilly’s excellent [Beyond Batch 101](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/) and [Beyond Batch 102](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-102/) article series. 
+For more details about watermark concepts, see O’Reilly’s [Beyond Batch 101](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/) and [Beyond Batch 102](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-102/) article series. 
 
 ## Why We Develop Watermark for Pulsar
 
-Pulsar has a limited concept of event time today: the `eventTime` field of a message. This field (or a timestamp extracted from the message body) is sometimes used by the consumer to generate watermarks, e.g. using the bounded out-of-orderness heuristic. However, this approach is highly sensitive to Pulsar’s system internals, especially in historical processing and when working with partitioned topics. So there are some concrete problems of generating watermarks when consuming a Pulsar topic by Flink application, Pulsar Functions, and other and other modern stream processing engines (SPE):
+Pulsar has a limited concept of event time: the `eventTime` field of a message. This field (or a timestamp extracted from the message body) is sometimes used by the consumer to generate watermarks, for example, using the bounded out-of-orderness heuristic. However, this approach is highly sensitive to Pulsar’s system internals, especially in historical processing and when working with partitioned topics. So there are some problems of generating watermarks when consuming a Pulsar topic by Flink application, Pulsar Functions, and other and other modern stream processing engines (SPE):
 
-- Pulsar does not guarantee ordering across keys nor with respect to event time. This means that a consumer may observe a highly disordered stream of events with respect to the event time domain.
+- Pulsar does not guarantee ordering across keys nor with respect to event time. It means that a consumer may observe a highly disordered stream of events with respect to the event time domain.
 - Pulsar has no concept of producer groups and no way to enumerate which producers are active on a topic when there are multiple producers.
 - Pulsar client encapsulation makes it difficult for an application to generate correct watermarks, and the client makes no effort to deliver messages in event-time order or to emphasize fairness.
 - Pulsar transactions increase disorder in the event time domain from a subscriber perspective due to batching effects.
@@ -21,7 +21,7 @@ For more details, see [our proposal](https://docs.google.com/document/d/1fWOM1zY
 
 ## How to Experiment
 
-You can experiment the watermarking progress with the sample code contained in the [watermarking repository](https://github.com/EronWright/pulsar-hackathon-2021-projects-watermarking). In our experiment, we adopt a sensor dataset that provides many out-of-order events. For details, refer to [our dataset](https://data.world/cityofchicago/beach-weather-stations-automated-sensors).
+You can experiment the watermarking progress with the sample code contained in the [this watermarking repository](https://github.com/EronWright/pulsar-hackathon-2021-projects-watermarking). In our experiment, we adopt a sensor dataset that provides many out-of-order events. For details on the data, refer to [our dataset](https://data.world/cityofchicago/beach-weather-stations-automated-sensors).
 
 ### Producers
 
@@ -30,11 +30,11 @@ From the producer side, we set up four use cases:
 1. **SyncProducer**: A producer that ingests data in Pulsar and creates a watermark when completing data ingestion.
 2. **MultiProducerSync**: Each **station** has one producer and each producer generates its own watermark. We have three **stations** and three producers.
 3. **MultipleProducersPartitionedSync**: Data are ingested by a partitioned topic, and each topic has data for a specific station and each has its own watermark.
-4. **TransactionalProducer**: We use the transactional functionality of pulsar, that periodically commits transactions and upon every commit it creates a watermark. By using Pulsar transactions, watermarks are created when periodically committing transactions. 
+4. **TransactionalProducer**: By using Pulsar transactions, watermarks are created when periodically committing transactions. 
 
 ### Consumers
 
-The consumers consume events from a topic in the following way.   
+The consumers consume events from a topic in the following way:   
 
 1. The consumer stores the events in a buffer until it receives a watermark.
 2. When the consumer receives a watermark, the consumer materializes the events stored in the buffer.
@@ -62,5 +62,3 @@ The following are some references we've used in this project:
 - [Data set](https://data.world/cityofchicago/beach-weather-stations-automated-sensors)
 - [Beyond Batch 101](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/)
 - [Beyond Batch 102](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-102/)
-
-
