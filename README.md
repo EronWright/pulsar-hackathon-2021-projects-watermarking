@@ -1,32 +1,38 @@
-# Pulsar Hackathon 2021 Watermarking Project
+## What is Watermarker
 
-Scope
------
-This repository contains sample code in order to experiment with the support of watermarks in Apache Pulsar.
-Watermarks may be understood as an assertion made by the producers about the progression of event time and 
-the end goal is to provide correctness of results for the end consumers - i.e in an infinite stream of events where they may arrive out of order.
+## Why we develop watermark for Pulsar
 
-Dataset
--------
-For illustration purposes we use a sensor dataset, that provides many out-of-order events.
-More information can be found here:\
-https://data.world/cityofchicago/beach-weather-stations-automated-sensors
+## Scope
 
-Producers
----------
-One the producer side, we have 4 different use cases:
-1. **SyncProducer:** A simple producer that ingests the data in pulsar a creates a watermark upon completion
-2. **MultiProducerSync:** We create a producer per **station (3 producers)**, where each generates it's own watermark
-3. **MultipleProducersPartitionedSync:** We ingest a data into a partitioned topic, where each topic has data for a specific station and each has it's own watermarks
-4. **TransactionalProducer:** We use the transactional functionality of pulsar, that periodically commits transactions and upon every commit it creates a watermark
+Our goal is to support watermarks in Apache Pulsar. The producers creates watermarks to mark the progression of event time. For an infinite stream of events where messages and watermarks arrive out of order, Apache Pulsar is able to provide correct results for the end consumers.
 
-Consumers
----------
-The end goal for a consumer, for illustration purposes is to consume events from a topic.
-While consuming the events, the consumer holds those events in a buffer waiting to receive a watermark.
-When the consumer receives a watermark, then it materializes the events stored in the buffer - sorts those events
-and emits them for downstream consumption.
+You can experiment the watermarking progress with the sample code contained in the repository.
 
-1. **Java Client Consumer**
+## Dataset
 
-2. **Apache Flink**
+In our experiment, we adopt a sensor dataset that provides many out-of-order events. For details, refer to [our dataset](https://data.world/cityofchicago/beach-weather-stations-automated-sensors).
+
+## Producers
+
+From the producer side, we set up four use cases:
+
+1. **SyncProducer**: A producer that ingests data in Pulsar and creates a watermark when completing data ingestion.
+2. **MultiProducerSync**: Each **station** has one producer and each producer generates its own watermark. We have three **stations** and three producers.
+3. **MultipleProducersPartitionedSync**: Data are ingested by a partitioned topic, and each topic has data for a specific station and each has its own watermark.
+4. **TransactionalProducer**: We use the transactional functionality of pulsar, that periodically commits transactions and upon every commit it creates a watermark. By using Pulsar transactions, watermarks are created when periodically committing transactions. 
+
+## Consumers
+
+The consumers consume events from a topic in the following way.   
+
+1. The consumer stores the events in a buffer until it receives a watermark.
+2. When the consumer receives a watermark, the consumer materializes the events stored in the buffer.
+3. The consumer then sorts and emits the events for downstream consumption.
+
+In our experiment, we support the following consumers:
+
+- Java Client Consumer
+- Apache Flink
+
+## Conclusion
+
