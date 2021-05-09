@@ -69,7 +69,7 @@ public interface Producer<T> extends Closeable {
 }
 ```
 
-Watermarks may also be send transactionally:
+Watermarks may also be sent transactionally:
 ```
 public interface Producer<T> extends Closeable {
     /**
@@ -95,10 +95,17 @@ public interface WatermarkBuilder extends Serializable {
 }
 ```
 
-Watermarks are broadcast to all partitions, in-band with other messages that are routed normally.  The producer is thus making an assertion that minimum event time for any subsequent message is at least the specified time (see `setEventTime` field of `TypedMessageBuilder<T>`).
+Watermarks are broadcast to all partitions, in-band with other messages that are routed normally.  The producer is making an assertion that the minimum event time for any subsequent message is at least the specified time (see `setEventTime` field of `TypedMessageBuilder<T>`).
 
-## Broker
-For each subscription, the broker uses a managed cursor to materialize the minimum watermark across all producers. The watermark tracks the acknowledeged mesasges, so that the watermark doesn't advance prematurely for any one consumer.  This allows the system to work well with all subsciptrion types.  In other words, the cursor tracks the _mark-delete point_ of the subscription's main cursor.
+### Demo Producer
+The demo app includes a number of producers, each designed to induce a kind of disorder in the event stream.
+1. A transactional producer to explore disorder produced by transactions.
+2. A producer which produces a partitioned topic.
+3. A producer which generates out-of-order messages but with a correct watermark.
+4. A producer which generates genuine late messages (i.e. events with a timestamp that is older than the latest watermark).
+
+### Broker
+For each subscription, the broker uses a managed cursor to materialize the minimum watermark across all producers. The watermark tracks the acknowledged mesasges, so that the watermark doesn't advance prematurely for any one consumer.  This allows the system to work well with all subscription types.  In other words, the watermark cursor tracks the _mark-delete point_ of the subscription's main cursor.
 
 Within the broker, the cursor is encapsulated in a `WatermarkGenerator` that accepts tracking updates from the subscription.
 ```
@@ -115,14 +122,19 @@ public interface WatermarkGenerator {
      * Advance the tracking position of the watermark generator.
      */
     CompletableFuture<Void> seek(Position position);
+    
+    /**
+     * Register a listener for changes to the watermark.
+     */
+    setListener(WatermarkGeneratorListener listener);
 }
 
 ```
-The watermark generator supports transactions.  If an uncommitted watermark is encountered, the generator hold its in state until the transactio is committed.
+The watermark generator supports transactions.  If an uncommitted watermark is encountered, the generator holds it in state until the transaction is committed.
 
-The generator vends the watermarks to consumers upon changese to thge tracking position.  The dispatcher also handles sending the latest watermark to new consumers.  Again this watermark represents acknowleged messages only, to ensure that the watermark monotoonically increases for all consumers.
+The generator vends watermarks to the dispatcher upon changes to the tracking position.  The dispatcher forwards watermarks to all consumers and handles sending the latest watermark to any new consumer.  Again this watermark represents acknowleged messages only, to ensure that the watermark monotonically increases for all consumers.
 
-## Consumer
+### Consumer
 The consumer opts into watermarking using a new method on the `ConsumerBuilder`.  There are minor semantic changes to the `read` methods which warrant this.
 ```
 public interface ConsumerBuilder<T> extends Cloneable {
@@ -173,8 +185,35 @@ public interface Consumer<T> extends Closeable {
 }
 ```
 
-The consumer receives watermarks on the same thread as ordinary messages.  The consumer may expect that any subsequent message will have an event timestamp of at least the watermark value.  If the expectation is violated, it is due to a false assertion made by a producer.  The application should treat such messages as true late mssages.
+The consumer receives watermarks on the same thread as ordinary messages.  The consumer may expect that any subsequent message will have an event timestamp of at least the watermark value.  If the expectation is violated, it is due to a false assertion made by a producer.  The application should treat such messages as true late messages.
 
+### Demo Consumer
+The demo consumer works by buffering incoming messages into a `PriorityQueue`, sorted by the timestamp of the event.  When a watermark arrives, the consumer flushes from the buffer any event with a timestamp that is older or equal to the watermark.  In this way, a streaming re-ordering is achieved. 
+
+```
+public class CustomMsgListener implements MessageListener<StationSensorReading> {
+    PriorityQueue<StationSensorReading> buffer;
+    @Override
+    public void received(Consumer<StationSensorReading> consumer, Message<StationSensorReading> message) {
+        buffer.add(message.getValue());
+    }
+    
+    public void receivedWatermark(Consumer<StationSensorReading> consumer, Watermark watermark) {
+        Iterator<StationSensorReading> it = buffer.iterator();
+        while(it.hasNext()) {
+            StationSensorReading e = it.next();
+            if (e.getMeasurementTimestamp().getTime() <= watermark.getEventTime()) {
+                System.out.println(e);
+                it.remove();
+            }
+        }
+    }
+}
+```
+
+The demo consumer also has flags to simulate faults.
+1. `--fault-noack` - causes the consumer to fail to acknowledge received messages.  In a multi-consumer scenario, this should cause the watermark to stall across all consumers of the subscription.
+ 
 ## Conclusion
 
 It is worthy to introduce watermarks in Apache Pulsar, the main benefits include: 
