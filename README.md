@@ -134,7 +134,7 @@ The watermark generator supports transactions.  If an uncommitted watermark is e
 
 The generator vends watermarks to the dispatcher upon changes to the tracking position.  The dispatcher forwards watermarks to all consumers and handles sending the latest watermark to any new consumer.  Again this watermark represents acknowleged messages only, to ensure that the watermark monotonically increases for all consumers.
 
-### Consumer
+### Consumer API
 The consumer opts into watermarking using a new method on the `ConsumerBuilder`.  There are minor semantic changes to the `read` methods which warrant this.
 ```
 public interface ConsumerBuilder<T> extends Cloneable {
