@@ -195,11 +195,13 @@ The demo consumer works by buffering incoming messages into a `PriorityQueue`, s
 ```
 public class CustomMsgListener implements MessageListener<StationSensorReading> {
     PriorityQueue<StationSensorReading> buffer;
+    
     @Override
     public void received(Consumer<StationSensorReading> consumer, Message<StationSensorReading> message) {
         buffer.add(message.getValue());
     }
     
+    @Override 
     public void receivedWatermark(Consumer<StationSensorReading> consumer, Watermark watermark) {
         Iterator<StationSensorReading> it = buffer.iterator();
         while(it.hasNext()) {
