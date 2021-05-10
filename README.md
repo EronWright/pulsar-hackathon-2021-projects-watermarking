@@ -176,7 +176,7 @@ public interface MessageListener<T> extends Serializable {
 }
 
 ```
-The consumer may also obtain the latest watermark via the `Consumer` interface.  This should be called after `read` or `readAsync` completes.  To accelerate the receipt of watermarks, any outstanding async read is automatically completed with a `null` mesasage.  Open question as to whether an exception would be better.  Suggest apps use `read` with a timeout if the synhronous approach is preferred.
+The consumer may also obtain the latest watermark via the `Consumer` interface.  This should be called after `read` or `readAsync` completes.  To accelerate the receipt of watermarks, any outstanding async read is automatically completed with a `null` message.  Open question as to whether an exception would be better.  Suggest apps use `read` with a timeout if the synchronous approach is preferred.
 
 ```
 public interface Consumer<T> extends Closeable {
@@ -187,10 +187,10 @@ public interface Consumer<T> extends Closeable {
 }
 ```
 
-The consumer receives watermarks on the same thread as ordinary messages.  The consumer may expect that any subsequent message will have an event timestamp of at least the watermark value.  If the expectation is violated, it is due to a false assertion made by a producer.  The application should treat such messages as true late messages.
+The consumer receives watermarks on the same thread as ordinary messages.  The consumer may expect that any subsequent message will have an event timestamp of at least the watermark value.  If the expectation is violated, it is due to a false assertion made by a producer.  The application should treat such messages as _true late messages_.
 
 ### Demo Consumer
-The demo consumer works by buffering incoming messages into a `PriorityQueue`, sorted by the timestamp of the event.  When a watermark arrives, the consumer flushes from the buffer any event with a timestamp that is older or equal to the watermark.  In this way, a streaming re-ordering is achieved. 
+The demo consumer works by buffering incoming messages into a `PriorityQueue`, sorted by the timestamp of the event.  When a watermark arrives, the consumer flushes from the buffer any event with a timestamp that is older or equal to the watermark.  In this way, a streaming re-ordering of events into event-time order is achieved. 
 
 ```
 public class CustomMsgListener implements MessageListener<StationSensorReading> {
