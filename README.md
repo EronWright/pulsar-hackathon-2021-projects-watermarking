@@ -95,7 +95,9 @@ public interface WatermarkBuilder extends Serializable {
 }
 ```
 
-Watermarks are broadcast to all partitions, in-band with other messages that are routed normally.  The producer is making an assertion that the minimum event time for any subsequent message is at least the specified time (see `setEventTime` field of `TypedMessageBuilder<T>`).
+The producer is making an assertion that the minimum event time for any subsequent message is at least the specified time (see `setEventTime` field of `TypedMessageBuilder<T>`).
+
+Watermarks are broadcast to all partitions, inline with other messages that are routed normally.  Watermarks are stored in the managed ledger as messages with a `markerType` metadata field with value `W_UPDATE`.
 
 ### Demo Producer
 The demo app includes a number of producers, each designed to induce a kind of disorder in the event stream.
