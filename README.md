@@ -107,7 +107,7 @@ The demo app includes a number of producers, each designed to induce a kind of d
 4. A producer which generates genuine late messages (i.e. events with a timestamp that is older than the latest watermark).
 
 ### Broker
-For each subscription, the broker uses a managed cursor to materialize the minimum watermark across all producers. The watermark tracks the acknowledged mesasges, so that the watermark doesn't advance prematurely for any one consumer.  This allows the system to work well with all subscription types.  In other words, the watermark cursor tracks the _mark-delete point_ of the subscription's main cursor.
+For each subscription, the broker uses a managed cursor to materialize the minimum watermark across all producers. The watermark tracks the _acknowledged mesasges_, so that the watermark doesn't advance prematurely for any one consumer.  This allows the system to work well with all subscription types.  In other words, the watermark cursor tracks the _mark-delete point_ of the subscription's main cursor.
 
 Within the broker, the cursor is encapsulated in a `WatermarkGenerator` that accepts tracking updates from the subscription.
 ```
