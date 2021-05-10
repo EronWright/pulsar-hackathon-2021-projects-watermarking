@@ -56,7 +56,7 @@ Watermarking is a process of gathering watermark messages from producers, broker
 ### Producer API
 The producer emits watermarks via a new method on the `Producer` interface:
 
-```
+```java
 package org.apache.pulsar.client.api;
 
 public interface Producer<T> extends Closeable {
@@ -70,7 +70,7 @@ public interface Producer<T> extends Closeable {
 ```
 
 Watermarks may also be sent transactionally:
-```
+```java
 public interface Producer<T> extends Closeable {
     /**
      * Create a new watermark builder with transaction.
@@ -80,7 +80,7 @@ public interface Producer<T> extends Closeable {
 ```
 
 The builder allows for an event time to be set on the watermark.
-```
+```java
 public interface WatermarkBuilder extends Serializable {
     /**
      * Set the event time for a given watermark.
@@ -110,7 +110,7 @@ The demo app includes a number of producers, each designed to induce a kind of d
 For each subscription, the broker uses a managed cursor to materialize the minimum watermark across all producers. The watermark tracks _acknowledged messages_, so that the watermark doesn't advance prematurely for any one consumer.  This allows the system to work well with all subscription types.  In other words, the watermark cursor tracks the _mark-delete point_ of the subscription's main cursor.
 
 Within the broker, the cursor is encapsulated in a `WatermarkGenerator` that accepts tracking updates from the subscription.
-```
+```java
 package org.apache.pulsar.broker.service.eventtime;
 
 public interface WatermarkGenerator {
@@ -138,7 +138,7 @@ The generator vends watermarks to the dispatcher upon changes to the tracking po
 
 ### Consumer API
 The consumer opts into watermarking using a new method on the `ConsumerBuilder`.  There are minor semantic changes to the `read` methods which warrant this.
-```
+```java
 public interface ConsumerBuilder<T> extends Cloneable {
     /**
      * Enable or disable receiving watermarks.
@@ -151,7 +151,7 @@ public interface ConsumerBuilder<T> extends Cloneable {
 
 The consumer receives watermarks using a new method on the `MessageListener` interface.  
 
-```
+```java
 package org.apache.pulsar.client.api;
 
 public interface MessageListener<T> extends Serializable {
@@ -178,7 +178,7 @@ public interface MessageListener<T> extends Serializable {
 ```
 The consumer may also obtain the latest watermark via the `Consumer` interface.  This should be called after `read` or `readAsync` completes.  To accelerate the receipt of watermarks, any outstanding async read is automatically completed with a `null` message.  Open question as to whether an exception would be better.  Suggest apps use `read` with a timeout if the synchronous approach is preferred.
 
-```
+```java
 public interface Consumer<T> extends Closeable {
     /**
      * @return The latest watermark, or null if watermarking is not enabled or a watermark has not been received.
@@ -192,7 +192,7 @@ The consumer receives watermarks on the same thread as ordinary messages.  The c
 ### Demo Consumer
 The demo consumer works by buffering incoming messages into a `PriorityQueue`, sorted by the timestamp of the event.  When a watermark arrives, the consumer flushes from the buffer any event with a timestamp that is older or equal to the watermark.  In this way, a streaming re-ordering of events into event-time order is achieved. 
 
-```
+```java
 public class CustomMsgListener implements MessageListener<StationSensorReading> {
     PriorityQueue<StationSensorReading> buffer;
     
