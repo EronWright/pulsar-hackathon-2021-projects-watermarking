@@ -1,4 +1,4 @@
-_Note: see [EronWright/pulsar](https://github.com/apache/pulsar/compare/branch-2.7...EronWright:watermarking?expand=1) repository (`watermarking` branch) for the corresponding Pulsar code._
+_Note: see [EronWright/pulsar](https://github.com/apache/pulsar/compare/branch-2.7...EronWright:watermarking?expand=1) repository (`watermarking` branch) for the corresponding Pulsar prototype code, and [streamnative/pulsar-flink#327](https://github.com/streamnative/pulsar-flink/pull/327) for the Flink connector prototype code._
 
 ## What is Watermarking
 
